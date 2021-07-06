@@ -10,10 +10,12 @@ import (
 
 var upgrader = websocket.Upgrader{}
 
+// handler for home page
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>Hello world</h1>")
 }
 
+// handler for websocket echo 
 func echo(w http.ResponseWriter, r *http.Request) {
 	// cros
 	upgrader.CheckOrigin = func(r *http.Request) bool {
@@ -43,6 +45,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Listen server on `addr(string)`
 func Listen(addr string){
 	http.HandleFunc("/", home)
 	http.HandleFunc("/echo", echo)
