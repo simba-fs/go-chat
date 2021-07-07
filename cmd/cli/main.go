@@ -5,6 +5,7 @@ import (
 	"flag"
 
 	"github.com/simba-fs/go-chat/internal/server"
+	"github.com/simba-fs/go-chat/internal/client"
 )
 
 func main(){
@@ -17,5 +18,7 @@ func main(){
 
 	if(*isServer){
 		server.Listen(addr)
+	}else{
+		client.Start()
 	}
 }

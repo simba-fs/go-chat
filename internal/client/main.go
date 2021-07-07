@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"fmt"
@@ -63,7 +63,7 @@ func Send(msgType string, data string) {
 	}
 }
 
-func executor(raw string) {
+func Executor(raw string) {
 	cmd := parseCmd(raw)
 
 	switch cmd[0] {
@@ -121,9 +121,9 @@ func executor(raw string) {
 	}
 }
 
-func main() {
+func Start() {
 	prompt.New(
-		executor,
+		Executor,
 		completer,
 		prompt.OptionLivePrefix(livePrompt),
 	).Run()
