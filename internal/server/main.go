@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"errors"
 
 	"github.com/gorilla/websocket"
 )
@@ -22,22 +23,27 @@ func echo(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 
-	c, err := upgrader.Upgrade(w, r, nil)
+	conn, err := upgrader.Upgrade(w, r, nil)
 
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
 	}
-	defer c.Close()
+	defer conn.Close()
+
+	conn.SetCloseHandler(func(code int, text string) error{
+		fmt.Printf("code = %d text = %s\n", code, text)
+		return errors.New("this is a close error")
+	})
 
 	for {
-		mt, message, err := c.ReadMessage()
+		mt, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			break
 		}
 		log.Printf("recv: %s", message)
-		err = c.WriteMessage(mt, message)
+		err = conn.WriteMessage(mt, message)
 		if err != nil {
 			log.Println("write:", err)
 			break
