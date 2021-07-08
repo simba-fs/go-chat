@@ -20,7 +20,10 @@ type Client struct {
 var client = &Client{nil, "", "", ""}
 
 func livePrompt() (string, bool) {
-	return fmt.Sprintf("%s > ", client.server), true
+	if client.conn == nil {
+		return "> ", true
+	}
+	return fmt.Sprintf("%s#%s @ %s > ", client.nickname, client.room, client.server), true
 }
 
 func completer(d prompt.Document) []prompt.Suggest {
@@ -38,7 +41,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 // ReadCommand reads command from stdin
 func parseCmd(raw string) []string {
 	if len(raw) <= 0 {
-		return []string{}
+		return []string{""}
 	}
 
 	cmd := []string{}
@@ -46,6 +49,10 @@ func parseCmd(raw string) []string {
 		if val != "" {
 			cmd = append(cmd, val)
 		}
+	}
+
+	if len(cmd) == 0 {
+		cmd = append(cmd, "")
 	}
 
 	return cmd
@@ -67,12 +74,12 @@ func Executor(raw string) {
 	cmd := parseCmd(raw)
 
 	switch cmd[0] {
-	case "/help", "/cmd", "":
+	case "/help", "":
 		fmt.Println("/connect <URL>        connect to chat sercer")
 		fmt.Println("/disconnect           disconnect")
 		fmt.Println("/room [room id]       enter/list a chat room on server")
 		fmt.Println("/nickname [new name]  change/show nickname")
-		fmt.Println("/help, /cmd           show this message")
+		fmt.Println("/help                 show this message")
 	case "/connect":
 		addr := "ws://127.0.0.1:3000/echo"
 		if len(cmd) > 1 {
@@ -83,7 +90,10 @@ func Executor(raw string) {
 		if err != nil {
 			fmt.Println("connecting error")
 		} else {
-			client = &Client{c, addr, "testUser", "testRoom"}
+			client.conn = c
+			client.server = addr
+			client.nickname = "testUser"
+			client.room = "testRoom"
 		}
 
 	case "/disconnect":
@@ -93,14 +103,17 @@ func Executor(raw string) {
 			// NOTE: I don't know what the usage of deadline is, I don't need it here
 			time.Now().AddDate(0, 0, 1),
 		)
-		client = &Client{nil, "", "", ""}
+		client.conn = nil
+		client.server = ""
+		client.nickname = ""
+		client.room = ""
 	case "/room":
 		if len(cmd) > 1 {
 			Send("room", cmd[1])
 			// on success
 			client.room = cmd[1]
 		} else {
-			fmt.Printf("Your are at room %s", client.room)
+			fmt.Printf("Your are at room %s\n", client.room)
 		}
 	case "/nickname":
 		if len(cmd) > 1 {
@@ -108,7 +121,7 @@ func Executor(raw string) {
 			// on success
 			client.nickname = cmd[1]
 		} else {
-			fmt.Printf("Your nickname is %s", client.nickname)
+			fmt.Printf("Your nickname is %s\n", client.nickname)
 		}
 	case "/exit":
 		if client.conn != nil {
@@ -121,7 +134,33 @@ func Executor(raw string) {
 	}
 }
 
+func receive() {
+	for {
+		if client.conn == nil {
+			continue
+		}
+		_, msg, err := client.conn.ReadMessage()
+		if err != nil {
+			fmt.Println("read: ", err)
+			break
+		}
+		cmd := strings.Split(string(msg), " ")
+		if len(cmd) < 1 {
+			continue
+		}
+		switch cmd[0] {
+		case "msg":
+			fmt.Printf("receive: %s\n", msg)
+		case "room":
+			client.room = cmd[1]
+		case "nickname":
+			client.nickname = cmd[1]
+		}
+	}
+}
+
 func Start() {
+	go receive()
 	prompt.New(
 		Executor,
 		completer,
