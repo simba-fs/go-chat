@@ -6,13 +6,16 @@ import (
 	"strings"
 )
 
+// FuncExec can execute aother command in command definition object (Cmd)
+type FuncExec func(exec string)(string, error)
+
 // Cmd stores one command
 type Cmd struct {
 	Cmd         string
 	ArgLen      int64 // minimum required length of arguments, cmd not included
 	Usage       string
 	Description string
-	Exec        func(raw string, cmds []string) (string, error)
+	Exec        func(raw string, cmds []string, exec FuncExec) (string, error)
 }
 
 // Cmds stores a lot of commands
@@ -21,7 +24,6 @@ type CmdList struct {
 	Help   string
 	Helper func(cmds *CmdList) string
 }
-
 
 var ErrCommandNotFound = errors.New("command not found")
 var ErrMissArg = errors.New("missing args")
@@ -54,7 +56,7 @@ func (cmdList *CmdList) Exec(raw string) (string, error) {
 		return "", ErrCommandNotFound
 	}
 
-	return exec.Exec(raw, cmds)
+	return exec.Exec(raw, cmds, cmdList.Exec)
 
 }
 
@@ -68,7 +70,18 @@ func Helper(cmds *CmdList) string {
 }
 
 // New return a Cmd object
-func New(usage string, description string, exec func(raw string, cmds []string) (string, error)) Cmd {
+// example:
+//     cmdParser.New("/connect <ip> [port=8888]", "connect to server", func(raw string, cmds []string, exec cmdParser.FuncExec)(string, error){
+//          server := cmd[1]
+//          ip := 8888
+//          if len(cmd) >= 3 {
+//              ip = cmd[2]
+//          }
+//          fmt.Printf("connected to server %s:%s", server, ip)
+//
+//          retrurn "", nil
+//     })
+func New(usage string, description string, exec func(raw string, cmds []string, exec FuncExec) (string, error)) Cmd {
 	cmd := splitCmd(usage)
 
 	c := Cmd{

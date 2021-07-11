@@ -79,7 +79,7 @@ func receive() {
 
 func Start() {
 	c := []cmdParser.Cmd{
-		cmdParser.New("/connect", "connect to chat server", func(raw string, cmds []string) (string, error) {
+		cmdParser.New("/connect", "connect to chat server", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
 			addr := "ws://127.0.0.1:3000/echo"
 			if len(cmds) > 1 {
 				addr = cmds[1]
@@ -96,7 +96,7 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/disconnect", "disconnect", func(raw string, cmds []string) (string, error) {
+		cmdParser.New("/disconnect", "disconnect", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
 			client.conn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "connection close by client"),
@@ -109,7 +109,7 @@ func Start() {
 			client.room = ""
 			return "", nil
 		}),
-		cmdParser.New("/room [id]", "enter/list a chat room on server", func(raw string, cmds []string) (string, error) {
+		cmdParser.New("/room [id]", "enter/list a chat room on server", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
 			if len(cmds) > 1 {
 				Send("room", cmds[1])
 				// on success
@@ -119,7 +119,7 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/nickname [name]", "change/show nickname", func(raw string, cmds []string) (string, error) {
+		cmdParser.New("/nickname [name]", "change/show nickname", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
 			if len(cmds) > 1 {
 				Send("nickname", cmds[1])
 				// on success
@@ -129,10 +129,8 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/exit", "exit program", func(raw string, cmds []string) (string, error) {
-			if client.conn != nil {
-				client.conn.Close()
-			}
+		cmdParser.New("/exit", "exit program", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
+			exec("/disconnect")
 			fmt.Println("Good bye ~")
 			os.Exit(0)
 			return "", nil
