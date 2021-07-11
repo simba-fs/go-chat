@@ -10,7 +10,7 @@ func TestCmdType(t *testing.T) {
 			0,
 			"/name",
 			"show current name",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				return "simba", nil
 			},
 		},
@@ -19,7 +19,7 @@ func TestCmdType(t *testing.T) {
 			0,
 			"/room [room id]",
 			"show or change current room",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				if len(cmds) > 2 {
 					return cmds[1], nil
 				}
@@ -31,7 +31,7 @@ func TestCmdType(t *testing.T) {
 			0,
 			"/server [ip]",
 			"show or change current server ip",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				if len(cmds) > 2 {
 					return cmds[1], nil
 				}
@@ -50,7 +50,7 @@ func TestCmdListTye(t *testing.T) {
 			0,
 			"/name",
 			"show current name",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				return "simba", nil
 			},
 		},
@@ -59,7 +59,7 @@ func TestCmdListTye(t *testing.T) {
 			0,
 			"/room [room id]",
 			"show or change current room",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				if len(cmds) > 2 {
 					return cmds[1], nil
 				}
@@ -71,7 +71,7 @@ func TestCmdListTye(t *testing.T) {
 			0,
 			"/server [ip]",
 			"show or change current server ip",
-			func(raw string, cmds []string, exec FuncExec) (string, error) {
+			func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error) {
 				if len(cmds) > 2 {
 					return cmds[1], nil
 				}
@@ -86,14 +86,14 @@ func TestCmdListTye(t *testing.T) {
 		Helper,
 	}
 
-	cl.Exec("/name")
-	cl.Exec("/room 12")
-	cl.Exec("/room")
-	t.Log(cl.Exec("/help"))
+	cl.Exec("/name", nil)
+	cl.Exec("/room 12", nil)
+	cl.Exec("/room", nil)
+	t.Log(cl.Exec("/help", nil))
 }
 
 func TestNew(t *testing.T){
-	c := New("/connect [ip]", "connect to server", func(raw string, cmds []string, exec FuncExec)(string, error){
+	c := New("/connect [ip]", "connect to server", func(raw string, cmds []string, arg interface{}, exec FuncExec)(string, error){
 		if len(cmds) < 2 {
 			return "", errors.New("length of arg not match")
 		}

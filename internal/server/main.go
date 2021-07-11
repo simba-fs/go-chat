@@ -17,7 +17,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 // handler for websocket echo 
-func echo(w http.ResponseWriter, r *http.Request) {
+func wsServer(w http.ResponseWriter, r *http.Request) {
 	// cros
 	upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
@@ -37,24 +37,25 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	})
 
 	for {
-		mt, message, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
 			break
 		}
-		log.Printf("recv: %s", message)
-		err = conn.WriteMessage(mt, message)
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+		exec(message, conn)
+		// log.Printf("recv: %s", message)
+		// err = conn.WriteMessage(mt, message)
+		// if err != nil {
+		//     log.Println("write:", err)
+		//     break
+		// }
 	}
 }
 
 // Listen server on `addr(string)`
 func Listen(addr string){
 	http.HandleFunc("/", home)
-	http.HandleFunc("/echo", echo)
+	http.HandleFunc("/echo", wsServer)
 
 	log.Printf("Listen on %s", addr)
 	log.Fatal(http.ListenAndServe(addr, nil))

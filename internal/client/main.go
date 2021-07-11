@@ -45,7 +45,7 @@ func Send(msgType string, data string) {
 		return
 	}
 	msg := fmt.Sprintf("%s %s", msgType, data)
-	fmt.Printf("send: %s\n", msg)
+	// fmt.Printf("send: %s\n", msg)
 	err := client.conn.WriteMessage(websocket.TextMessage, []byte(msg))
 	if err != nil {
 		fmt.Println("sending error")
@@ -66,6 +66,7 @@ func receive() {
 		if len(cmd) < 1 {
 			continue
 		}
+		// fmt.Printf("%#v\n", cmd)
 		switch cmd[0] {
 		case "msg":
 			fmt.Printf("receive: %s\n", msg)
@@ -73,13 +74,15 @@ func receive() {
 			client.room = cmd[1]
 		case "nickname":
 			client.nickname = cmd[1]
+		default:
+			fmt.Printf("%v\n", cmd)
 		}
 	}
 }
 
 func Start() {
 	c := []cmdParser.Cmd{
-		cmdParser.New("/connect", "connect to chat server", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
+		cmdParser.New("/connect", "connect to chat server", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec) (string, error) {
 			addr := "ws://127.0.0.1:3000/echo"
 			if len(cmds) > 1 {
 				addr = cmds[1]
@@ -96,7 +99,7 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/disconnect", "disconnect", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
+		cmdParser.New("/disconnect", "disconnect", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec) (string, error) {
 			client.conn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "connection close by client"),
@@ -109,7 +112,7 @@ func Start() {
 			client.room = ""
 			return "", nil
 		}),
-		cmdParser.New("/room [id]", "enter/list a chat room on server", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
+		cmdParser.New("/room [id]", "enter/list a chat room on server", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec) (string, error) {
 			if len(cmds) > 1 {
 				Send("room", cmds[1])
 				// on success
@@ -119,7 +122,7 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/nickname [name]", "change/show nickname", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
+		cmdParser.New("/nickname [name]", "change/show nickname", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec) (string, error) {
 			if len(cmds) > 1 {
 				Send("nickname", cmds[1])
 				// on success
@@ -129,8 +132,8 @@ func Start() {
 			}
 			return "", nil
 		}),
-		cmdParser.New("/exit", "exit program", func(raw string, cmds []string, exec cmdParser.FuncExec) (string, error) {
-			exec("/disconnect")
+		cmdParser.New("/exit", "exit program", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec) (string, error) {
+			exec("/disconnect", nil)
 			fmt.Println("Good bye ~")
 			os.Exit(0)
 			return "", nil
@@ -149,7 +152,7 @@ func Start() {
 	go receive()
 	prompt.New(
 		func(raw string) {
-			_, err := cl.Exec(raw)
+			_, err := cl.Exec(raw, nil)
 			if err != nil {
 				if err == cmdParser.ErrCommandNotFound {
 					Send("msg", raw)
