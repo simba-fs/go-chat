@@ -1,25 +1,25 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"errors"
 
 	"github.com/gorilla/websocket"
 	"github.com/simba-fs/go-chat/internal/room"
 )
 
 var upgrader = websocket.Upgrader{}
-var defaultRoom = room.New("default")
-var rooms = []*room.Room{defaultRoom}
+var rooms = []*room.Room{}
+var defaultRoom = room.Get("default")
 
 // handler for home page
 func home(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>Hello world</h1>")
 }
 
-// handler for websocket echo 
+// handler for websocket echo
 func wsServer(w http.ResponseWriter, r *http.Request) {
 	// cros
 	upgrader.CheckOrigin = func(r *http.Request) bool {
@@ -34,10 +34,10 @@ func wsServer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	defaultRoom.Add(conn)
+	connection := room.NewConnection(conn, defaultRoom)
+	defaultRoom.Add(connection)
 
-	conn.SetCloseHandler(func(code int, text string) error{
-		fmt.Printf("code = %d text = %s\n", code, text)
+	conn.SetCloseHandler(func(code int, text string) error {
 		return errors.New("this is a close error")
 	})
 
@@ -47,12 +47,12 @@ func wsServer(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			break
 		}
-		exec(message, conn, defaultRoom)
+		exec(message, connection, defaultRoom)
 	}
 }
 
 // Listen server on `addr(string)`
-func Listen(addr string){
+func Listen(addr string) {
 	http.HandleFunc("/", home)
 	http.HandleFunc("/echo", wsServer)
 

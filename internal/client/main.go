@@ -100,6 +100,9 @@ func Start() {
 			return "", nil
 		}),
 		cmdParser.New("/disconnect", "disconnect", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{}) (string, error) {
+			if client.conn == nil {
+				return "", nil
+			}
 			client.conn.WriteControl(
 				websocket.CloseMessage,
 				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "connection close by client"),
@@ -113,6 +116,10 @@ func Start() {
 			return "", nil
 		}),
 		cmdParser.New("/room [id]", "enter/list a chat room on server", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{}) (string, error) {
+			if client.conn == nil {
+				fmt.Println("Please connect to a server")
+				return "", nil
+			}
 			if len(cmds) > 1 {
 				Send("room", cmds[1])
 				// on success
@@ -123,6 +130,10 @@ func Start() {
 			return "", nil
 		}),
 		cmdParser.New("/nickname [name]", "change/show nickname", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{}) (string, error) {
+			if client.conn == nil {
+				fmt.Println("Please connect to a server")
+				return "", nil
+			}
 			if len(cmds) > 1 {
 				Send("nickname", cmds[1])
 				// on success

@@ -4,19 +4,19 @@ import "github.com/gorilla/websocket"
 
 type Room struct {
 	Name string
-	Conns []*websocket.Conn
+	Conns []*Connection
 }
 
-// Broadcast send message to all connection in the room
+// Broadcast send message to all Connection in the room
 func (room *Room) Broadcast(msgType string, data string) *Room {
 	for _, i := range room.Conns {
-		i.WriteMessage(websocket.TextMessage, []byte(data))
+		i.Conn.WriteMessage(websocket.TextMessage, []byte(data))
 	}
 	return room
 }
 
-// Add add connection to the room
-func (room *Room) Add(conn *websocket.Conn) *Room {
+// Add add Connection to the room
+func (room *Room) Add(conn *Connection) *Room {
 	for _, i := range room.Conns {
 		if i == conn {
 			return room
@@ -26,9 +26,9 @@ func (room *Room) Add(conn *websocket.Conn) *Room {
 	return room
 }
 
-// Remove remove connection from the room
-func (room *Room) Remove(conn *websocket.Conn) *Room {
-	result := []*websocket.Conn{}
+// Remove remove Connection from the room
+func (room *Room) Remove(conn *Connection) *Room {
+	result := []*Connection{}
 	for _, i := range room.Conns {
 		if i != conn {
 			result = append(result, i)
@@ -38,9 +38,9 @@ func (room *Room) Remove(conn *websocket.Conn) *Room {
 	return room
 }
 
-// Clear clear all connection from the room
+// Clear clear all Connection from the room
 func (room *Room) Clear() *Room {
-	room.Conns = []*websocket.Conn{}
+	room.Conns = []*Connection{}
 	return room
 }
 
@@ -48,8 +48,16 @@ func (room *Room) size() int {
 	return len(room.Conns)
 }
 
-// New create a new empty room
-func New(name string) *Room{
-	room := &Room{name, []*websocket.Conn{}}
+var rooms = []*Room{}
+
+// Get returns a Room by the given name. If it doesn't exist, it will create a new one
+func Get(name string) *Room{
+	for _, i := range rooms {
+		if i.Name == name {
+			return i
+		}
+	}
+	room := &Room{name, []*Connection{}}
+	rooms = append(rooms, room)
 	return room
 }
