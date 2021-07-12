@@ -2,6 +2,7 @@ package server
 
 import "fmt"
 import "errors"
+import "github.com/simba-fs/go-chat/internal/room"
 import "github.com/simba-fs/go-chat/internal/cmdParser"
 import "github.com/gorilla/websocket"
 
@@ -9,6 +10,7 @@ var cl cmdParser.CmdList
 
 var (
 	ErrNoConnection = errors.New("no connection")
+	ErrNoRoom = errors.New("no default room")
 )
 
 // func wrapper(f func()) func(raw string, cmds []string, exec cmdParser.FuncExec)(string, error){
@@ -17,14 +19,26 @@ var (
 
 func init(){
 	c := []cmdParser.Cmd{
-		cmdParser.New("msg", "echo message", func(raw string, cmds []string, arg interface{}, exec cmdParser.FuncExec)(string, error){
+		cmdParser.New("msg", "echo message", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{})(string, error){
 			fmt.Printf("cmdd %v\n", cmds)
-			conn, ok := arg.(*websocket.Conn)
+
+			// get conn
+			// conn, ok := arg[0].(*websocket.Conn)
+			// if !ok {
+			//     return "", ErrNoConnection
+			// }
+
+			// get room
+			// curtRoom means current room
+			curtRoom, ok := arg[1].(*room.Room)
 			if !ok {
-				return "", ErrNoConnection
+				return "", ErrNoRoom
 			}
-			err := conn.WriteMessage(websocket.TextMessage, []byte(raw))
-			return "", err
+
+			curtRoom.Broadcast("msg", raw)
+
+			// err := conn.WriteMessage(websocket.TextMessage, []byte(raw))
+			return "", nil
 		}),
 	}
 
@@ -35,6 +49,6 @@ func init(){
 	}
 }
 
-func exec(cmd []byte, conn *websocket.Conn){
-	fmt.Println(cl.Exec(string(cmd), conn))
+func exec(cmd []byte, conn *websocket.Conn, room *room.Room){
+	fmt.Println(cl.Exec(string(cmd), conn, room))
 }

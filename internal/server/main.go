@@ -7,9 +7,12 @@ import (
 	"errors"
 
 	"github.com/gorilla/websocket"
+	"github.com/simba-fs/go-chat/internal/room"
 )
 
 var upgrader = websocket.Upgrader{}
+var defaultRoom = room.New("default")
+var rooms = []*room.Room{defaultRoom}
 
 // handler for home page
 func home(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +34,8 @@ func wsServer(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
+	defaultRoom.Add(conn)
+
 	conn.SetCloseHandler(func(code int, text string) error{
 		fmt.Printf("code = %d text = %s\n", code, text)
 		return errors.New("this is a close error")
@@ -42,13 +47,7 @@ func wsServer(w http.ResponseWriter, r *http.Request) {
 			log.Println("read:", err)
 			break
 		}
-		exec(message, conn)
-		// log.Printf("recv: %s", message)
-		// err = conn.WriteMessage(mt, message)
-		// if err != nil {
-		//     log.Println("write:", err)
-		//     break
-		// }
+		exec(message, conn, defaultRoom)
 	}
 }
 

@@ -7,7 +7,7 @@ import (
 )
 
 // FuncExec can execute aother command in command definition object (Cmd)
-type FuncExec func(exec string, arg interface{})(string, error)
+type FuncExec func(exec string, arg ...interface{}) (string, error)
 
 // Cmd stores one command
 type Cmd struct {
@@ -15,7 +15,7 @@ type Cmd struct {
 	ArgLen      int64 // minimum required length of arguments, cmd not included
 	Usage       string
 	Description string
-	Exec        func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error)
+	Exec        func(raw string, cmds []string, exec FuncExec, arg ...interface{}) (string, error)
 }
 
 // Cmds stores a lot of commands
@@ -28,9 +28,8 @@ type CmdList struct {
 var ErrCommandNotFound = errors.New("command not found")
 var ErrMissArg = errors.New("missing args")
 
-
 // Exec execute commands in cmdList
-func (cmdList *CmdList) Exec(raw string, arg interface{}) (string, error) {
+func (cmdList *CmdList) Exec(raw string, arg ...interface{}) (string, error) {
 	cmds := splitCmd(raw)
 	if cmds[0] == cmdList.Help || cmds[0] == "" {
 		return cmdList.Helper(cmdList), nil
@@ -56,7 +55,7 @@ func (cmdList *CmdList) Exec(raw string, arg interface{}) (string, error) {
 		return "", ErrCommandNotFound
 	}
 
-	return exec.Exec(raw, cmds, arg, cmdList.Exec)
+	return exec.Exec(raw, cmds, cmdList.Exec, arg...)
 
 }
 
@@ -81,7 +80,7 @@ func Helper(cmds *CmdList) string {
 //
 //          retrurn "", nil
 //     })
-func New(usage string, description string, exec func(raw string, cmds []string, arg interface{}, exec FuncExec) (string, error)) Cmd {
+func New(usage string, description string, exec func(raw string, cmds []string, exec FuncExec, arg ...interface{}) (string, error)) Cmd {
 	cmd := splitCmd(usage)
 
 	c := Cmd{
