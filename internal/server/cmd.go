@@ -19,7 +19,7 @@ var (
 
 func init(){
 	c := []cmdParser.Cmd{
-		cmdParser.New("msg", "echo message", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{})(string, error){
+		cmdParser.New("msg <Msg>", "echo message", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{})(string, error){
 			msg := strings.Join(cmds[1:], " ")
 
 			// get conn
@@ -40,6 +40,54 @@ func init(){
 			curtRoom.Broadcast("msg", fmt.Sprintf("%s: %s", conn.Name, msg))
 
 			// err := conn.WriteMessage(websocket.TextMessage, []byte(raw))
+			return "", nil
+		}),
+		cmdParser.New("room <Room ID>", "room", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{})(string, error){
+			// get conn
+			conn, ok := arg[0].(*room.Connection)
+			if !ok {
+				return "", ErrNoConnection
+			}
+
+			// get room
+			// curtRoom means current room
+			curtRoom, ok := arg[1].(*room.Room)
+			if !ok {
+				return "", ErrNoRoom
+			}
+
+			newRoom := cmds[1]
+
+			curtRoom.Remove(conn)
+			room.Get(newRoom).Add(conn)
+			conn.Room.Name = newRoom
+
+			curtRoom.Broadcast("msg", fmt.Sprintf("%s leave the room", conn.Name))
+			conn.Send("room", newRoom)
+
+			return "", nil
+		}),
+		cmdParser.New("member", "list member", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{})(string, error){
+			// get conn
+			conn, ok := arg[0].(*room.Connection)
+			if !ok {
+				return "", ErrNoConnection
+			}
+
+			// get room
+			// curtRoom means current room
+			curtRoom, ok := arg[1].(*room.Room)
+			if !ok {
+				return "", ErrNoRoom
+			}
+
+			members := ""
+			for _, i := range curtRoom.Conns {
+				members += fmt.Sprintf("\"%s\" ", i.Name)
+			}
+
+			conn.Send("member", members)
+
 			return "", nil
 		}),
 	}

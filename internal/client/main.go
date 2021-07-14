@@ -34,6 +34,7 @@ func completer(d prompt.Document) []prompt.Suggest {
 		{Text: "/disconnect", Description: "disconnect"},
 		{Text: "/room", Description: "enter/list a chat room"},
 		{Text: "/nickname", Description: "change/show nickname"},
+		{Text: "/member", Description: "list all members in the room"},
 		{Text: "/help", Description: "show this message"},
 		{Text: "/exit", Description: "exit this program"},
 	}
@@ -141,6 +142,14 @@ func Start() {
 			} else {
 				fmt.Printf("Your nickname is %s\n", client.nickname)
 			}
+			return "", nil
+		}),
+		cmdParser.New("/member", "list members in the room", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{}) (string, error) {
+			if client.conn == nil {
+				fmt.Println("Please connect to a server")
+				return "", nil
+			}
+			Send("member", "")
 			return "", nil
 		}),
 		cmdParser.New("/exit", "exit program", func(raw string, cmds []string, exec cmdParser.FuncExec, arg ...interface{}) (string, error) {

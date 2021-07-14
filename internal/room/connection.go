@@ -9,6 +9,10 @@ type Connection struct {
 	Name string
 }
 
+func (conn *Connection) Send(msgType string, data string){
+	conn.Conn.WriteMessage(websocket.TextMessage, []byte(msgType + " " + data))
+}
+
 func NewConnection(conn *websocket.Conn, room *Room) *Connection {
 	connection := &Connection{
 		Conn: conn,
